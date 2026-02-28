@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
-from src.app import User, db, Role
+from src.Models.user import User
+from src.Models.role import Role
+from src.Models.base import db
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 app = Blueprint("role", __name__, url_prefix="/roles")

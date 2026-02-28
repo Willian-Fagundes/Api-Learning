@@ -1,14 +1,21 @@
 from flask import Blueprint, request, jsonify
-from src.app import db, Post
+from src.Models.base import db
+from src.Models.post import Post
 from src.utils import requires_roles
+from src.Views.post import CreateSchema, PostSchema
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from http import HTTPStatus
+from marshmallow import ValidationError
 
 app = Blueprint("post", __name__, url_prefix="/posts")
 
 
 def _create_post():
-    data = request.json
+    post_schema = PostSchema()
+    try:
+        data = post_schema.load(request.json)
+    except ValidationError as exc:
+        return exc.messages, HTTPStatus.UNPROCESSABLE_ENTITY
     author_id = get_jwt_identity()
     post = Post(title = data["title"],
                 body = data["body"],
@@ -16,7 +23,11 @@ def _create_post():
                 )
     db.session.add(post)
     db.session.commit()
+    return {"message" : "user created"}, HTTPStatus.CREATED
+    
 
+@jwt_required()
+@requires_roles("admin")
 def _list_posts():
     query = db.select(Post)
     posts = db.session.execute(query).scalars()
@@ -26,7 +37,6 @@ def _list_posts():
              "author_id" : post.author_id} for post in posts]
 
 @app.route("/", methods = ["GET", "POST"])
-@jwt_required()
 def handle_post():
     if request.method == "POST":
         _create_post()
@@ -62,6 +72,7 @@ def update_post_title(post_id):
     
 
 @app.route("/<int:post_id>", methods = ["DELETE"])
+@jwt_required()
 def delete_post(post_id):
     post = db.get_or_404(Post, post_id)
     db.delete(post)
