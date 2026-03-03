@@ -1,9 +1,19 @@
 import os
-from flask import Flask
+from flask import Flask, Blueprint
 from src.models.base import db, Base
 from src.models.user import User
 from src.models.role import Role
 from src.models.todo import Todo
+from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
+from flask_bcrypt import Bcrypt
+from flask_marshmallow import Marshmallow
+
+ma = Marshmallow()
+migrate = Migrate()
+jwt = JWTManager()
+bcrypt = Bcrypt()
+
 
 
 def create_app(test_config=None):
@@ -26,6 +36,6 @@ def create_app(test_config=None):
     db.init_app(app)
     with app.app_context():
         db.create_all()
-
+    
     return app
     
